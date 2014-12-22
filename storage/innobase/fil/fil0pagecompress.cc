@@ -269,14 +269,25 @@ fil_compress_page(
         int level = 0;
         ulint header_len = FIL_PAGE_DATA + FIL_PAGE_COMPRESSED_SIZE;
 	ulint write_size=0;
-	ulint comp_method = innodb_compression_algorithm; /* Cache to avoid
-							  change during
-							  function execution */
+	/* Cache to avoid change during function execution */
+	ulint comp_method = innodb_compression_algorithm;
+	ulint orig_page_type;
 
 	ut_ad(buf);
 	ut_ad(out_buf);
 	ut_ad(len);
 	ut_ad(out_len);
+
+	/* read original page type */
+	orig_page_type = mach_read_from_2(buf + FIL_PAGE_TYPE);
+
+	/* Let's not compress file space header or
+	extent descriptor */
+	if ((orig_page_type == FIL_PAGE_TYPE_FSP_HDR)
+	     || (orig_page_type == FIL_PAGE_TYPE_XDES) ) {
+		*out_len = len;
+		return (buf);
+	}
 
         level = compression_level;
 	ut_ad(fil_space_is_page_compressed(space_id));
@@ -422,7 +433,7 @@ fil_compress_page(
 	/* Set up the correct page type */
 	mach_write_to_2(out_buf+FIL_PAGE_TYPE, FIL_PAGE_PAGE_COMPRESSED);
 	/* Set up the flush lsn to be compression algorithm */
-	mach_write_to_8(out_buf+FIL_PAGE_FILE_FLUSH_LSN, comp_method);
+	mach_write_to_8(out_buf+FIL_PAGE_FILE_FLUSH_LSN_OR_KEY_VERSION, comp_method);
 	/* Set up the actual payload lenght */
 	mach_write_to_2(out_buf+FIL_PAGE_DATA, write_size);
 
@@ -431,7 +442,7 @@ fil_compress_page(
 	ut_ad(fil_page_is_compressed(out_buf));
 	ut_ad(mach_read_from_4(out_buf+FIL_PAGE_SPACE_OR_CHKSUM) == BUF_NO_CHECKSUM_MAGIC);
 	ut_ad(mach_read_from_2(out_buf+FIL_PAGE_DATA) == write_size);
-	ut_ad(mach_read_from_8(out_buf+FIL_PAGE_FILE_FLUSH_LSN) == (ulint)comp_method);
+	ut_ad(mach_read_from_8(out_buf+FIL_PAGE_FILE_FLUSH_LSN_OR_KEY_VERSION) == (ulint)comp_method);
 
 	/* Verify that page can be decompressed */
 	{
@@ -461,6 +472,9 @@ fil_compress_page(
 		ut_a(block_size > 0);
 #endif
 		write_size =  (size_t)ut_uint64_align_up((ib_uint64_t)write_size, block_size);
+                /* Initialize rest of the written data to avoid
+                   uninitialized bytes */
+		memset(out_buf+tmp, 0, write_size-tmp);
 #ifdef UNIV_DEBUG
 		ut_a(write_size > 0 && ((write_size % block_size) == 0));
 		ut_a(write_size >= tmp);
@@ -480,6 +494,7 @@ fil_compress_page(
 	/* If we do not persistently trim rest of page, we need to write it
 	all */
 	if (!srv_use_trim) {
+		memset(out_buf+write_size, 0, len-write_size);
 		write_size = len;
 	}
 
@@ -555,7 +570,7 @@ fil_decompress_page(
 	}
 
 	/* Get compression algorithm */
-	compression_alg = mach_read_from_8(buf+FIL_PAGE_FILE_FLUSH_LSN);
+	compression_alg = mach_read_from_8(buf+FIL_PAGE_FILE_FLUSH_LSN_OR_KEY_VERSION);
 
 	/* Get the actual size of compressed page */
 	actual_size = mach_read_from_2(buf+FIL_PAGE_DATA);
@@ -726,5 +741,3 @@ fil_decompress_page(
 		ut_free(in_buf);
 	}
 }
-
-

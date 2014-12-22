@@ -1,0 +1,1 @@
+--enable-file_key_management_plugin --file_key_management_plugin_filename=$MYSQL_TEST_DIR/suite/innodb/include/keys.txt

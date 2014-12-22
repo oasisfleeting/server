@@ -1,0 +1,13 @@
+# bool global
+
+# exists as global only
+#
+select @@global.encrypt_algorithm;
+--error ER_INCORRECT_GLOBAL_LOCAL_VAR
+select @@session.encrypt_algorithm;
+
+#
+# show that it's not writable
+#
+--error 1238
+set global encrypt_algorithm="none";

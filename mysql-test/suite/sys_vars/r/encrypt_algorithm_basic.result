@@ -1,0 +1,7 @@
+select @@global.encrypt_algorithm;
+@@global.encrypt_algorithm
+none
+select @@session.encrypt_algorithm;
+ERROR HY000: Variable 'encrypt_algorithm' is a GLOBAL variable
+set global encrypt_algorithm="none";
+ERROR HY000: Variable 'encrypt_algorithm' is a read only variable
