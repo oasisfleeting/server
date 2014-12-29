@@ -11254,7 +11254,7 @@ ha_innobase::check_table_options(
 	atomic_writes_t awrites = (atomic_writes_t)options->atomic_writes;
 
 	if (options->page_encryption) {
-		if (srv_encrypt_tables) {
+		if (!srv_encrypt_tables) {
 			push_warning(
 				thd, Sql_condition::WARN_LEVEL_WARN,
 				HA_WRONG_CREATE_OPTION,
