@@ -5940,10 +5940,20 @@ buf_page_decrypt_after_read(
 
 	if (key_version == 0) {
 		/* the page we read is unencrypted */
-		if (dst_frame != src_frame) {
-			/* but we had allocated a crypt_buf */
-			// TODO: Can this be avoided ?
-			memcpy(dst_frame, src_frame, size);
+		if (fil_page_is_compressed(dst_frame)) {
+			if (bpage->comp_buf_free == NULL) {
+				bpage->comp_buf_free = (byte *)malloc(UNIV_PAGE_SIZE*2);
+				// TODO: is 4k aligment enough ?
+				bpage->comp_buf = (byte*)ut_align(bpage->comp_buf_free, UNIV_PAGE_SIZE);
+			}
+
+			fil_decompress_page(bpage->comp_buf, dst_frame, size, NULL);
+		} else {
+			if (dst_frame != src_frame) {
+				/* but we had allocated a crypt_buf */
+				// TODO: Can this be avoided ?
+				memcpy(dst_frame, src_frame, size);
+			}
 		}
 	} else {
 		/* the page we read is encrypted */
