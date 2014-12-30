@@ -59,6 +59,7 @@ Created 11/5/1995 Heikki Tuuri
 #include "ut0byte.h"
 
 #include "fil0pageencryption.h"
+#include "fil0pagecompress.h"
 
 
 /* prototypes for new functions added to ha_innodb.cc */
@@ -574,7 +575,7 @@ buf_page_is_corrupted(
 	ulint		zip_size)	/*!< in: size of compressed page;
 					0 for uncompressed pages */
 {
-	ulint		page_encrypted = fil_page_is_encrypted(read_buf);
+	ulint		page_encrypted = fil_page_is_compressed_encrypted(read_buf) || fil_page_is_encrypted(read_buf);
 	ulint		checksum_field1;
 	ulint		checksum_field2;
 	ibool		crc32_inited = FALSE;
@@ -1075,7 +1076,10 @@ buf_block_init(
 	block->page.io_fix = BUF_IO_NONE;
 	block->page.crypt_buf = NULL;
 	block->page.crypt_buf_free = NULL;
+	block->page.comp_buf = NULL;
+	block->page.comp_buf_free = NULL;
 	block->page.key_version = 0;
+
 
 	block->modify_clock = 0;
 
@@ -3565,6 +3569,8 @@ buf_page_init_low(
 	bpage->write_size = 0;
 	bpage->crypt_buf = NULL;
 	bpage->crypt_buf_free = NULL;
+	bpage->comp_buf = NULL;
+	bpage->comp_buf_free = NULL;
 	bpage->key_version = 0;
 
 	HASH_INVALIDATE(bpage, hash);
@@ -5772,6 +5778,11 @@ buf_page_encrypt_before_write(
 	buf_page_t* bpage,     /*!< in/out: buffer page to be flushed */
 	const byte* src_frame) /*!< in: src frame */
 {
+	if (srv_encrypt_tables == FALSE) {
+		/* Encryption is disabled */
+		return const_cast<byte*>(src_frame);
+	}
+
 	if (bpage->offset == 0) {
 		/* Page 0 of a tablespace is not encrypted */
 		ut_ad(bpage->key_version == 0);
@@ -5791,6 +5802,7 @@ buf_page_encrypt_before_write(
 	}
 
 	ulint zip_size = buf_page_get_zip_size(bpage);
+	ulint page_size = (zip_size) ? zip_size : UNIV_PAGE_SIZE;
 
 	/**
 	* TODO(jonaso): figure out more clever malloc strategy
@@ -5807,18 +5819,28 @@ buf_page_encrypt_before_write(
 	*    considered a lot.
 	*/
 
-	bpage->crypt_buf_free = (byte*)malloc(UNIV_PAGE_SIZE*2);
-	byte *dst_frame = bpage->crypt_buf = (byte *)ut_align(bpage->crypt_buf_free, UNIV_PAGE_SIZE);
+	if (bpage->crypt_buf_free == NULL) {
+		bpage->crypt_buf_free = (byte*)malloc(page_size*2);
+		// TODO: Is 4k aligment enough ?
+		bpage->crypt_buf = (byte *)ut_align(bpage->crypt_buf_free, page_size);
+	}
 
-	// encrypt page content
-	fil_space_encrypt(bpage->space, bpage->offset,
-			  bpage->newest_modification,
-			  src_frame, zip_size, dst_frame, 0);
+	byte *dst_frame = bpage->crypt_buf;
 
-	unsigned key_version =
-		mach_read_from_4(dst_frame + FIL_PAGE_FILE_FLUSH_LSN_OR_KEY_VERSION);
-	ut_ad(key_version == 0 || key_version >= bpage->key_version);
-	bpage->key_version = key_version;
+	if (!fil_space_is_page_compressed(bpage->space)) {
+		// encrypt page content
+		fil_space_encrypt(bpage->space, bpage->offset,
+			bpage->newest_modification,
+			src_frame, zip_size, dst_frame, 0);
+
+		unsigned key_version =
+			mach_read_from_4(dst_frame + FIL_PAGE_FILE_FLUSH_LSN_OR_KEY_VERSION);
+		ut_ad(key_version == 0 || key_version >= bpage->key_version);
+		bpage->key_version = key_version;
+	} else {
+		// We do compression and encryption later on os0file.cc
+		dst_frame = (byte *)src_frame;
+	}
 
 	// return dst_frame which will be written
 	return dst_frame;
@@ -5837,6 +5859,13 @@ buf_page_encrypt_after_write(
 		bpage->crypt_buf_free = NULL;
 		bpage->crypt_buf = NULL;
 	}
+
+	if (bpage->comp_buf_free != NULL) {
+		free(bpage->comp_buf_free);
+		bpage->comp_buf_free = NULL;
+		bpage->comp_buf = NULL;
+	}
+
 	return (TRUE);
 }
 
@@ -5849,6 +5878,8 @@ buf_page_decrypt_before_read(
 	buf_page_t* bpage) /*!< in/out: buffer page to be read */
 {
 	ulint zip_size = buf_page_get_zip_size(bpage);
+	ulint size = (zip_size) ? zip_size : UNIV_PAGE_SIZE;
+
 
 	if (bpage->offset == 0) {
 		/* File header pages are not encrypted */
@@ -5863,10 +5894,20 @@ unencrypted:
 		goto unencrypted;
 	}
 
-	// allocate buffer to read data into
-	bpage->crypt_buf_free = (byte*)malloc(UNIV_PAGE_SIZE*2);
-	bpage->crypt_buf = (byte*)ut_align(bpage->crypt_buf_free, UNIV_PAGE_SIZE);
-	return bpage->crypt_buf;
+	if (srv_encrypt_tables) {
+		if (bpage->crypt_buf_free == NULL) {
+			// allocate buffer to read data into
+			bpage->crypt_buf_free = (byte*)malloc(size*2);
+			// TODO: Is 4K aligment enough ?
+			bpage->crypt_buf = (byte*)ut_align(bpage->crypt_buf_free, size);
+		}
+
+		return bpage->crypt_buf;
+	} else {
+		// If database contains encrypted data it will be
+		// handled later.
+		goto unencrypted;
+	}
 }
 
 /********************************************************************//**
@@ -5878,27 +5919,30 @@ buf_page_decrypt_after_read(
 	buf_page_t* bpage) /*!< in/out: buffer page read from disk */
 {
 	ut_ad(bpage->key_version == 0);
+	ulint zip_size = buf_page_get_zip_size(bpage);
+	ulint size = (zip_size) ? zip_size : UNIV_PAGE_SIZE;
+
+	byte* dst_frame = (zip_size) ? bpage->zip.data :
+		((buf_block_t*) bpage)->frame;
+
 	if (bpage->offset == 0) {
 		/* File header pages are not encrypted */
 		ut_a(bpage->crypt_buf == NULL);
 		return (TRUE);
 	}
 
-	ulint zip_size = buf_page_get_zip_size(bpage);
-	ulint size = (zip_size) ? zip_size : UNIV_PAGE_SIZE;
-
-	byte* dst_frame = (zip_size) ? bpage->zip.data :
-		((buf_block_t*) bpage)->frame;
 	const byte* src_frame = bpage->crypt_buf != NULL ?
 		bpage->crypt_buf : dst_frame;
 
 	unsigned key_version =
 		mach_read_from_4(src_frame + FIL_PAGE_FILE_FLUSH_LSN_OR_KEY_VERSION);
+	bool page_compressed_encrypted = fil_page_is_compressed_encrypted(dst_frame);
 
 	if (key_version == 0) {
 		/* the page we read is unencrypted */
 		if (dst_frame != src_frame) {
 			/* but we had allocated a crypt_buf */
+			// TODO: Can this be avoided ?
 			memcpy(dst_frame, src_frame, size);
 		}
 	} else {
@@ -5908,13 +5952,27 @@ buf_page_decrypt_after_read(
 			* malloc a buffer, copy page to it
 			* and then decrypt from that into real page*/
 			bpage->crypt_buf_free = (byte *)malloc(UNIV_PAGE_SIZE*2);
+			// TODO: is 4k aligment enough ?
 			src_frame = bpage->crypt_buf = (byte*)ut_align(bpage->crypt_buf_free, UNIV_PAGE_SIZE);
 			memcpy(bpage->crypt_buf, dst_frame, size);
 		}
 		/* decrypt from src_frame to dst_frame */
 		fil_space_decrypt(bpage->space,
 				  src_frame, size, dst_frame);
+
+		/* decompress from dst_frame to comp_buf and then copy to
+		buffer pool */
+		if (page_compressed_encrypted) {
+			if (bpage->comp_buf_free == NULL) {
+				bpage->comp_buf_free = (byte *)malloc(UNIV_PAGE_SIZE*2);
+				// TODO: is 4k aligment enough ?
+				bpage->comp_buf = (byte*)ut_align(bpage->comp_buf_free, UNIV_PAGE_SIZE);
+			}
+
+			fil_decompress_page(bpage->comp_buf, dst_frame, size, NULL);
+		}
 	}
+
 	bpage->key_version = key_version;
 
 	if (bpage->crypt_buf_free != NULL) {
@@ -5923,6 +5981,14 @@ buf_page_decrypt_after_read(
 		bpage->crypt_buf = NULL;
 		bpage->crypt_buf_free = NULL;
 	}
+
+	if (bpage->comp_buf_free != NULL) {
+		// free temp page
+		free(bpage->comp_buf_free);
+		bpage->comp_buf = NULL;
+		bpage->comp_buf_free = NULL;
+	}
+
 	return (TRUE);
 }
 
