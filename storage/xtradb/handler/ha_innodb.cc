@@ -20239,7 +20239,7 @@ static MYSQL_SYSVAR_ULONG(fatal_semaphore_wait_threshold, srv_fatal_semaphore_wa
   0);
 
 static MYSQL_SYSVAR_BOOL(encrypt_tables, srv_encrypt_tables, 0,
-			 "Encrypt tables",
+			 "Encrypt all tables in the storage engine",
 			 0, 0, 0);
 
 static MYSQL_SYSVAR_UINT(encryption_threads, srv_n_fil_crypt_threads,

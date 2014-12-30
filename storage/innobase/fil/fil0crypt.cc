@@ -304,9 +304,8 @@ fil_crypt_get_latest_key(byte *dst, uint* key_length,
 		}
 
 		return fil_crypt_get_key(dst, key_length, crypt_data, *version, false);
-	} else {
-		return fil_crypt_get_key(dst, key_length, NULL, *version, true);
 	}
+        return fil_crypt_get_key(dst, key_length, NULL, *version, true);
 }
 
 /******************************************************************
