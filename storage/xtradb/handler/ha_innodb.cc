@@ -20575,7 +20575,7 @@ maria_declare_plugin(xtradb)
   &innobase_storage_engine,
   innobase_hton_name,
   plugin_author,
-  "Percona-XtraDB, Supports transactions, row-level locking, foreign keys and encryption for tables and columns",
+  "Percona-XtraDB, Supports transactions, row-level locking, foreign keys and encryption for tables",
   PLUGIN_LICENSE_GPL,
   innobase_init, /* Plugin Init */
   NULL, /* Plugin Deinit */

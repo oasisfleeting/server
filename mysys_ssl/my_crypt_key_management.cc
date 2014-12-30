@@ -6,13 +6,13 @@
 #endif
 
 #ifndef DBUG_OFF
-my_bool opt_danger_danger_use_dbug_keys = 0;
+my_bool debug_use_static_keys = 0;
 
 #ifdef HAVE_PSI_INTERFACE
 PSI_rwlock_key key_LOCK_dbug_crypto_key_version;
 #endif
 mysql_rwlock_t LOCK_dbug_crypto_key_version;
-unsigned int opt_danger_danger_dbug_crypto_key_version = 0;
+unsigned int opt_debug_crypto_key_version = 0;
 #endif
 
 /**
@@ -43,9 +43,9 @@ struct CryptoKeyFuncs_t cryptoKeyFuncs = {
 extern "C"
 int GetLatestCryptoKeyVersion() {
 #ifndef DBUG_OFF
-  if (opt_danger_danger_use_dbug_keys) {
+  if (debug_use_static_keys) {
     mysql_rwlock_rdlock(&LOCK_dbug_crypto_key_version);
-    unsigned int res = opt_danger_danger_dbug_crypto_key_version;
+    unsigned int res = opt_debug_crypto_key_version;
     mysql_rwlock_unlock(&LOCK_dbug_crypto_key_version);
     return res;
   }
@@ -67,7 +67,7 @@ int GetCryptoKeySize(unsigned int version) {
 extern "C"
 int GetCryptoKey(unsigned int version, unsigned char* key, unsigned int size) {
 #ifndef DBUG_OFF
-  if (opt_danger_danger_use_dbug_keys) {
+  if (debug_use_static_keys) {
     memset(key, 0, size);
     // Just don't support tiny keys, no point anyway.
     if (size < sizeof(version)) {

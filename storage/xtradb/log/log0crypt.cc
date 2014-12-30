@@ -33,7 +33,7 @@ It is called when:
 Note:
 We should not use flags and conditions such as:
 	(srv_encrypt_log &&
-	 opt_danger_danger_use_dbug_keys &&
+	 debug_use_static_keys &&
 	 GetLatestCryptoKeyVersion() == UNENCRYPTED_KEY_VER)
 because they haven't been read and set yet in the situation of resetting
 redo logs.

@@ -1132,21 +1132,22 @@ static Sys_var_mybool Sys_log_bin(
 
 
 #ifndef DBUG_OFF
-static Sys_var_mybool Sys_danger_danger_use_dbug_keys(
-       "danger_danger_use_dbug_keys",
-       "Enable use of nonrandom keys for crypto",
-       READ_ONLY GLOBAL_VAR(opt_danger_danger_use_dbug_keys),
+static Sys_var_mybool Sys_debug_use_static_keys(
+       "debug_use_static_keys",
+       "Enable use of nonrandom keys for crypto. Only to be used in "
+       "internal testing",
+       READ_ONLY GLOBAL_VAR(debug_use_static_keys),
        CMD_LINE(OPT_ARG), DEFAULT(FALSE));
 
-static PolyLock_rwlock PLock_sys_danger_danger_dbug_crypto_key_version(
+static PolyLock_rwlock PLock_sys_debug_crypto_key_version(
        &LOCK_dbug_crypto_key_version);
 
-static Sys_var_uint Sys_danger_danger_dbug_crypto_key_version(
-       "danger_danger_dbug_crypto_key_version",
-       "Crypto key version for debugging only",
-       GLOBAL_VAR(opt_danger_danger_dbug_crypto_key_version),
+static Sys_var_uint Sys_debug_crypto_key_version(
+       "debug_crypto_key_version",
+       "Crypto key version. Only to be used in internal testing.",
+       GLOBAL_VAR(opt_debug_crypto_key_version),
        CMD_LINE(REQUIRED_ARG), VALID_RANGE(0,UINT_MAX), DEFAULT(0),
-       BLOCK_SIZE(1), &PLock_sys_danger_danger_dbug_crypto_key_version);
+       BLOCK_SIZE(1), &PLock_sys_debug_crypto_key_version);
 #endif
 
 static Sys_var_mybool Sys_trust_function_creators(
