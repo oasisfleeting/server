@@ -5875,39 +5875,28 @@ Allocates memory to read in an encrypted page
 byte*
 buf_page_decrypt_before_read(
 /*=========================*/
-	buf_page_t* bpage) /*!< in/out: buffer page to be read */
+        buf_page_t* bpage, /*!< in/out: buffer page to be read */
+	ulint	zip_size)  /*!< in: compressed page size, or 0 */
 {
-	ulint zip_size = buf_page_get_zip_size(bpage);
 	ulint size = (zip_size) ? zip_size : UNIV_PAGE_SIZE;
 
+        /*
+          Here we only need to allocate space for not header pages
+          in case of file space encryption.  Table encryption is handled
+          later.
+        */
+	if (!srv_encrypt_tables || bpage->offset == 0 ||
+            fil_space_check_encryption_read(bpage->space) == false)
+          return zip_size ? bpage->zip.data : ((buf_block_t*) bpage)->frame;
 
-	if (bpage->offset == 0) {
-		/* File header pages are not encrypted */
-unencrypted:
-		if (zip_size)
-			return bpage->zip.data;
-		else
-			return ((buf_block_t*) bpage)->frame;
-	}
-
-	if (fil_space_check_encryption_read(bpage->space) == false) {
-		goto unencrypted;
-	}
-
-	if (srv_encrypt_tables) {
-		if (bpage->crypt_buf_free == NULL) {
-			// allocate buffer to read data into
-			bpage->crypt_buf_free = (byte*)malloc(size*2);
-			// TODO: Is 4K aligment enough ?
-			bpage->crypt_buf = (byte*)ut_align(bpage->crypt_buf_free, size);
-		}
-
-		return bpage->crypt_buf;
-	} else {
-		// If database contains encrypted data it will be
-		// handled later.
-		goto unencrypted;
-	}
+        if (bpage->crypt_buf_free == NULL)
+        {
+          // allocate buffer to read data into
+          bpage->crypt_buf_free = (byte*)malloc(size*2);
+          // TODO: Is 4K aligment enough ?
+          bpage->crypt_buf = (byte*)ut_align(bpage->crypt_buf_free, size);
+        }
+        return bpage->crypt_buf;
 }
 
 /********************************************************************//**
