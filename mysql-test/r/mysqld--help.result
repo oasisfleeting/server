@@ -164,7 +164,9 @@ The following options may be given as the first argument:
  on that value
  --encrypt-algorithm=name 
  Which encryption algorithm to use for table encryption.
- One of: none, aes_ecb, aes_cbc, aes_ctr
+ aes_cbc is the recommended one, if you want to use
+ encryption, as this is approved by most governments.. One
+ of: none, aes_ecb, aes_cbc, aes_ctr
  --encrypt-tmp-disk-tables 
  Encrypt tmp disk tables (created as part of query
  execution)
