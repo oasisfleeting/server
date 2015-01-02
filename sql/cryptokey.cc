@@ -1,25 +1,26 @@
 #include <my_global.h>
-#include <my_crypt_key_management.h>
 #include <mysql/plugin_cryptokey_management.h>
+#include "cryptokey.h"
 #include "log.h"
 #include "sql_plugin.h"
 
 #ifndef DBUG_OFF
 #include <arpa/inet.h>
 my_bool debug_use_static_crypto_keys = 0;
-unsigned int opt_debug_crypto_key_version = 0;
+uint opt_debug_crypto_key_version = 0;
 #endif
 
 /* there can be only one cryptokey management plugin enabled */
 static plugin_ref cryptokey_manager= 0;
 static struct st_mariadb_cryptokey_management *handle;
 
-extern "C"
-int GetLatestCryptoKeyVersion() {
+uint get_latest_crypto_key_version()
+{
 #ifndef DBUG_OFF
-  if (debug_use_static_crypto_keys) {
+  if (debug_use_static_crypto_keys)
+  {
     //mysql_mutex_lock(&LOCK_global_system_variables);
-    unsigned int res = opt_debug_crypto_key_version;
+    uint res = opt_debug_crypto_key_version;
     //mysql_mutex_unlock(&LOCK_global_system_variables);
     return res;
   }
@@ -31,31 +32,31 @@ int GetLatestCryptoKeyVersion() {
   return BAD_CRYPTOKEY_VERSION;
 }
 
-extern "C"
-unsigned int HasCryptoKey(unsigned int version) {
+uint has_crypto_key(uint version)
+{
   if (cryptokey_manager)
     return handle->has_key_version(version);
 
   return 0;
 }
 
-extern "C"
-int GetCryptoKeySize(unsigned int version) {
+uint get_crypto_key_size(uint version)
+{
   if (cryptokey_manager)
     return handle->get_key_size(version);
 
   return 0;
 }
 
-extern "C"
-int GetCryptoKey(unsigned int version, unsigned char* key, unsigned int size) {
+int get_crypto_key(uint version, uchar* key, uint size)
+{
 #ifndef DBUG_OFF
-  if (debug_use_static_crypto_keys) {
+  if (debug_use_static_crypto_keys)
+  {
     memset(key, 0, size);
     // Just don't support tiny keys, no point anyway.
-    if (size < sizeof(version)) {
+    if (size < sizeof(version))
       return 1;
-    }
 
     version = htonl(version);
     memcpy(key, &version, sizeof(version));
@@ -69,8 +70,8 @@ int GetCryptoKey(unsigned int version, unsigned char* key, unsigned int size) {
   return 1;
 }
 
-extern "C"
-int GetCryptoIV(unsigned int version, unsigned char* iv, unsigned int size) {
+int get_crypto_iv(uint version, uchar* iv, uint size)
+{
   if (cryptokey_manager)
     return handle->get_iv(version, iv, size);
 

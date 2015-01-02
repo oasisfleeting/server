@@ -28,6 +28,7 @@ SET(MYSQLSERVICES_SOURCES
   my_sha1_service.c
   my_md5_service.c
   wsrep_service.c
+  cryptokeys_service.c
   kill_statement_service.c
   logger_service.c)
 
