@@ -275,8 +275,6 @@ int EncKeys::parseFile(const char* filename, const uint32 maxKeyId,
       keys[oneKey->id - 1]= *oneKey;
       delete(oneKey);
       countKeys++;
-      sql_print_error("Line: %u --> ", keyLineInKeyFile);
-      printKeyEntry(id);
       break;
     case ERROR_ID_TOO_BIG:
       sql_print_error(errorExceedKeySize, KEY_MAX,

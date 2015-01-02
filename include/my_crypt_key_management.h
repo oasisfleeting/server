@@ -7,7 +7,7 @@
 #include "mysql/psi/psi.h"
 
 #ifndef DBUG_OFF
-extern my_bool debug_use_static_keys;
+extern my_bool debug_use_static_crypto_keys;
 
 #ifdef HAVE_PSI_INTERFACE
 extern PSI_rwlock_key key_LOCK_dbug_crypto_key_version;

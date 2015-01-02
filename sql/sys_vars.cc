@@ -1133,10 +1133,10 @@ static Sys_var_mybool Sys_log_bin(
 
 #ifndef DBUG_OFF
 static Sys_var_mybool Sys_debug_use_static_keys(
-       "debug_use_static_keys",
+       "debug_use_static_crypto_keys",
        "Enable use of nonrandom keys for crypto. Only to be used in "
        "internal testing",
-       READ_ONLY GLOBAL_VAR(debug_use_static_keys),
+       READ_ONLY GLOBAL_VAR(debug_use_static_crypto_keys),
        CMD_LINE(OPT_ARG), DEFAULT(FALSE));
 
 static PolyLock_rwlock PLock_sys_debug_crypto_key_version(
@@ -5163,7 +5163,7 @@ const char *encrypt_algorithm_names[]=
 { "none", "aes_ecb", "aes_cbc", "aes_ctr", 0 };
 static Sys_var_enum Sys_encrypt_algorithm(
        "encrypt_algorithm",
-       "Which encryption algorithm to use for table encryption. aes_cbc is the recommended one, if you want to use encryption, as this is approved by most governments.",
+       "Which encryption algorithm to use for table encryption. aes_cbc is the recommended one.",
        READ_ONLY GLOBAL_VAR(encrypt_algorithm),CMD_LINE(REQUIRED_ARG),
        encrypt_algorithm_names, DEFAULT(0));
 
