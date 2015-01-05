@@ -409,14 +409,13 @@ int get_defaults_options(int argc, char **argv,
                          char **extra_defaults,
                          char **group_suffix)
 {
-  int org_argc= argc, prev_argc= 0;
+  int org_argc= argc;
   *defaults= *extra_defaults= *group_suffix= 0;
 
-  while (argc >= 2 && argc != prev_argc)
+  while (argc >= 2)
   {
     /* Skip program name or previously handled argument */
     argv++;
-    prev_argc= argc;                            /* To check if we found */
     if (!*defaults && is_prefix(*argv,"--defaults-file="))
     {
       *defaults= *argv + sizeof("--defaults-file=")-1;
@@ -435,6 +434,7 @@ int get_defaults_options(int argc, char **argv,
       argc--;
       continue;
     }
+    break;
   }
   return org_argc - argc;
 }
