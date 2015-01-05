@@ -1139,15 +1139,12 @@ static Sys_var_mybool Sys_debug_use_static_keys(
        READ_ONLY GLOBAL_VAR(debug_use_static_crypto_keys),
        CMD_LINE(OPT_ARG), DEFAULT(FALSE));
 
-static PolyLock_rwlock PLock_sys_debug_crypto_key_version(
-       &LOCK_dbug_crypto_key_version);
-
 static Sys_var_uint Sys_debug_crypto_key_version(
        "debug_crypto_key_version",
        "Crypto key version. Only to be used in internal testing.",
        GLOBAL_VAR(opt_debug_crypto_key_version),
        CMD_LINE(REQUIRED_ARG), VALID_RANGE(0,UINT_MAX), DEFAULT(0),
-       BLOCK_SIZE(1), &PLock_sys_debug_crypto_key_version);
+       BLOCK_SIZE(1));
 #endif
 
 static Sys_var_mybool Sys_trust_function_creators(
