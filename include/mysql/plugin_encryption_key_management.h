@@ -1,4 +1,4 @@
-#ifndef MYSQL_PLUGIN_CRYPTOKEY_MANAGEMENT_INCLUDED
+#ifndef MYSQL_PLUGIN_ENCRYPTION_KEY_MANAGEMENT_INCLUDED
 /* Copyright (C) 2014 Sergei Golubchik and MariaDB
 
    This program is free software; you can redistribute it and/or modify
@@ -17,31 +17,31 @@
 /**
   @file
 
-  Cryptokey Management Plugin API.
+  Encryption key Management Plugin API.
 
-  This file defines the API for server plugins that manage cryptographical
+  This file defines the API for server plugins that manage encryption
   keys for MariaDB on-disk data encryption.
 */
 
-#define MYSQL_PLUGIN_CRYPTOKEY_MANAGEMENT_INCLUDED
+#define MYSQL_PLUGIN_ENCRYPTION_KEY_MANAGEMENT_INCLUDED
 
 #include <mysql/plugin.h>
 
-#define MariaDB_CRYPTOKEY_MANAGEMENT_INTERFACE_VERSION 0x0100
+#define MariaDB_ENCRYPTION_KEY_MANAGEMENT_INTERFACE_VERSION 0x0100
 
-#define BAD_CRYPTOKEY_VERSION (~0U)
+#define BAD_ENCRYPTION_KEY_VERSION (~0U)
 
 /**
-  Cryptokey management plugin descriptor
+  Encryption key management plugin descriptor
 */
-struct st_mariadb_cryptokey_management
+struct st_mariadb_encryption_key_management
 {
   int interface_version;                        /**< version plugin uses */
 
   /**
     function returning latest key version.
     
-    @return a version or BAD_CRYPTOKEY_VERSION to indicate an error.
+    @return a version or BAD_ENCRYPTION_KEY_VERSION to indicate an error.
   */
   unsigned int (*get_latest_key_version)();
 

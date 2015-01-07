@@ -62,7 +62,7 @@
 #include "sql_repl.h"
 #include "opt_range.h"
 #include "rpl_parallel.h"
-#include "cryptokey.h"
+#include "encryption_keys.h"
 
 /*
   The rule for this file: everything should be 'static'. When a sys_var
@@ -1133,16 +1133,16 @@ static Sys_var_mybool Sys_log_bin(
 
 #ifndef DBUG_OFF
 static Sys_var_mybool Sys_debug_use_static_keys(
-       "debug_use_static_crypto_keys",
-       "Enable use of nonrandom keys for crypto. Only to be used in "
+       "debug_use_static_encryption_keys",
+       "Enable use of nonrandom encryption keys. Only to be used in "
        "internal testing",
-       READ_ONLY GLOBAL_VAR(debug_use_static_crypto_keys),
+       READ_ONLY GLOBAL_VAR(debug_use_static_encryption_keys),
        CMD_LINE(OPT_ARG), DEFAULT(FALSE));
 
-static Sys_var_uint Sys_debug_crypto_key_version(
-       "debug_crypto_key_version",
-       "Crypto key version. Only to be used in internal testing.",
-       GLOBAL_VAR(opt_debug_crypto_key_version),
+static Sys_var_uint Sys_debug_encryption_key_version(
+       "debug_encryption_key_version",
+       "Encryption key version. Only to be used in internal testing.",
+       GLOBAL_VAR(opt_debug_encryption_key_version),
        CMD_LINE(REQUIRED_ARG), VALID_RANGE(0,UINT_MAX), DEFAULT(0),
        BLOCK_SIZE(1));
 #endif

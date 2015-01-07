@@ -16,7 +16,7 @@
 
 #include <my_global.h>
 #include <mysql_version.h>
-#include <mysql/plugin_cryptokey_management.h>
+#include <mysql/plugin_encryption_key_management.h>
 #include <my_aes.h>
 #include "sql_class.h"
 #include "KeySingleton.h"
@@ -165,8 +165,8 @@ static int file_key_management_plugin_deinit(void *p)
   return 0;
 }
 
-struct st_mariadb_cryptokey_management file_key_management_plugin= {
-  MariaDB_CRYPTOKEY_MANAGEMENT_INTERFACE_VERSION,
+struct st_mariadb_encryption_key_management file_key_management_plugin= {
+  MariaDB_ENCRYPTION_KEY_MANAGEMENT_INTERFACE_VERSION,
   get_highest_key_used_in_key_file,
   has_key_from_key_file,
   get_key_size_from_key_file,
@@ -179,7 +179,7 @@ struct st_mariadb_cryptokey_management file_key_management_plugin= {
 */
 maria_declare_plugin(file_key_management_plugin)
 {
-  MariaDB_CRYPTOKEY_MANAGEMENT_PLUGIN,
+  MariaDB_ENCRYPTION_KEY_MANAGEMENT_PLUGIN,
   &file_key_management_plugin,
   "file_key_management_plugin",
   "Denis Endro eperi GmbH",

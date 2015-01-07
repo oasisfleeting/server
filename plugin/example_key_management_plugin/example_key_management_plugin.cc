@@ -2,7 +2,7 @@
 
 #include <my_global.h>
 #include <my_aes.h>
-#include <mysql/plugin_cryptokey_management.h>
+#include <mysql/plugin_encryption_key_management.h>
 #include <my_md5.h>
 
 /* rotate key randomly between 45 and 90 seconds */
@@ -83,8 +83,8 @@ static int example_key_management_plugin_init(void *p)
   return 0;
 }
 
-struct st_mariadb_cryptokey_management example_key_management_plugin= {
-  MariaDB_CRYPTOKEY_MANAGEMENT_INTERFACE_VERSION,
+struct st_mariadb_encryption_key_management example_key_management_plugin= {
+  MariaDB_ENCRYPTION_KEY_MANAGEMENT_INTERFACE_VERSION,
   get_latest_key_version,
   has_key_func,
   get_key_size,
@@ -97,7 +97,7 @@ struct st_mariadb_cryptokey_management example_key_management_plugin= {
 */
 maria_declare_plugin(example_key_management_plugin)
 {
-  MariaDB_CRYPTOKEY_MANAGEMENT_PLUGIN,
+  MariaDB_ENCRYPTION_KEY_MANAGEMENT_PLUGIN,
   &example_key_management_plugin,
   "example_key_management_plugin",
   "Jonas Oreland",
