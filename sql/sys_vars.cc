@@ -5156,13 +5156,13 @@ static Sys_var_mybool Sys_encrypt_tmp_disk_tables(
        GLOBAL_VAR(encrypt_tmp_disk_tables),
        CMD_LINE(OPT_ARG), DEFAULT(FALSE));
 
-const char *encrypt_algorithm_names[]=
+const char *encryption_algorithm_names[]=
 { "none", "aes_ecb", "aes_cbc", "aes_ctr", 0 };
-static Sys_var_enum Sys_encrypt_algorithm(
-       "encrypt_algorithm",
+static Sys_var_enum Sys_encryption_algorithm(
+       "encryption_algorithm",
        "Which encryption algorithm to use for table encryption. aes_cbc is the recommended one.",
-       READ_ONLY GLOBAL_VAR(encrypt_algorithm),CMD_LINE(REQUIRED_ARG),
-       encrypt_algorithm_names, DEFAULT(0));
+       READ_ONLY GLOBAL_VAR(encryption_algorithm),CMD_LINE(REQUIRED_ARG),
+       encryption_algorithm_names, DEFAULT(0));
 
 static bool check_pseudo_slave_mode(sys_var *self, THD *thd, set_var *var)
 {

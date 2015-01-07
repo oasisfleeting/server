@@ -141,7 +141,7 @@ static int file_key_management_plugin_init(void *p)
   
   if (current_aes_dynamic_method == MY_AES_ALGORITHM_NONE)
   {
-    sql_print_error("No encryption method choosen with --encrypt-algorithm. "
+    sql_print_error("No encryption method choosen with --encryption-algorithm. "
                     "file_key_management_plugin disabled");
     return 1;
   }
