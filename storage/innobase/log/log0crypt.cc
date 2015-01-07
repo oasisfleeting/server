@@ -129,7 +129,7 @@ log_block_get_start_lsn(
 	ulint log_block_no)		/*!< in: log block number */
 {
 	lsn_t start_lsn =
-		(lsn & (lsn_t)0xffffffff00000000) |
+		(lsn & (lsn_t)0xffffffff00000000ULL) |
 		(((log_block_no - 1) & (lsn_t)0x3fffffff) << 9);
 	return start_lsn;
 }
