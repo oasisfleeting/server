@@ -708,7 +708,7 @@ fil_space_encrypt(ulint space, ulint offset, lsn_t lsn,
 	uint32 dstlen;
 
 	if (page_compressed) {
-		srclen = page_size;
+		srclen = page_size -  FIL_PAGE_DATA;;
 	}
 
 
@@ -723,7 +723,7 @@ fil_space_encrypt(ulint space, ulint offset, lsn_t lsn,
 			"Unable to encrypt data-block "
 			" src: %p srclen: %ld buf: %p buflen: %d."
 			" return-code: %d. Can't continue!\n",
-			src, (long)(page_size - unencrypted_bytes),
+			src, (long)srclen,
 			dst, dstlen, rc);
 		ut_error;
 	}
@@ -768,7 +768,7 @@ fil_space_encrypt(ulint space, ulint offset, lsn_t lsn,
 	} else {
 		/* Page compressed and encrypted tables have different
 		FIL_HEADER */
-		ulint page_len = log10((double)srclen)/log10((double)2);
+		ulint page_len = log10((double)page_size)/log10((double)2);
 		/* Set up the correct page type */
 		mach_write_to_2(dst_frame+FIL_PAGE_TYPE, FIL_PAGE_PAGE_COMPRESSED_ENCRYPTED);
 		/* Set up the compression algorithm */
@@ -883,9 +883,6 @@ fil_space_decrypt(fil_space_crypt_t* crypt_data,
 	    }
 	}
 
-	// decrypt page data
-	ulint unencrypted_bytes = FIL_PAGE_DATA + FIL_PAGE_DATA_END;
-
 	const byte* src = src_frame + FIL_PAGE_DATA;
 	byte* dst = dst_frame + FIL_PAGE_DATA;
 	uint32 dstlen;
@@ -893,18 +890,21 @@ fil_space_decrypt(fil_space_crypt_t* crypt_data,
 
 	ulint compressed_len;
 	ulint compression_method;
+
 	if (page_compressed) {
 		orig_page_type = mach_read_from_2(src_frame + FIL_PAGE_FILE_FLUSH_LSN_OR_KEY_VERSION+4);
 		compressed_len = mach_read_from_1(src_frame + FIL_PAGE_FILE_FLUSH_LSN_OR_KEY_VERSION+6);
 		compression_method = mach_read_from_1(src_frame + FIL_PAGE_FILE_FLUSH_LSN_OR_KEY_VERSION+7);
 	}
+
 	if (page_encrypted && !page_compressed) {
 		orig_page_type = mach_read_from_2(src_frame + FIL_PAGE_FILE_FLUSH_LSN_OR_KEY_VERSION+2);
 	}
 
 	if (page_type == FIL_PAGE_PAGE_COMPRESSED_ENCRYPTED) {
-		srclen = pow((double)2, (double)((int)compressed_len));
+		srclen = pow((double)2, (double)((int)compressed_len)) - FIL_PAGE_DATA;
 	}
+
 	int rc = (* my_aes_decrypt_dynamic)(src, srclen,
 	                                    dst, &dstlen,
 	                                    (unsigned char*)key, key_length,
@@ -916,7 +916,7 @@ fil_space_decrypt(fil_space_crypt_t* crypt_data,
 			"Unable to decrypt data-block "
 			" src: %p srclen: %ld buf: %p buflen: %d."
 			" return-code: %d. Can't continue!\n",
-			src, (long)(page_size - unencrypted_bytes),
+			src, (long)srclen,
 			dst, dstlen, rc);
 		ut_error;
 	}
