@@ -145,7 +145,7 @@ EncKeys::~EncKeys()
 bool EncKeys::initKeys(const char *filename, const char *filekey)
 {
   if (filename==NULL)
-    return ERROR_OPEN_FILE;
+    return false;
 
   const char *MAGIC= "FILE:";
   const short MAGIC_LEN= 5;

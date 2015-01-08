@@ -5,7 +5,6 @@
 #include "sql_plugin.h"
 
 #ifndef DBUG_OFF
-#include <arpa/inet.h>
 my_bool debug_use_static_encryption_keys = 0;
 uint opt_debug_encryption_key_version = 0;
 #endif
@@ -55,11 +54,10 @@ int get_encryption_key(uint version, uchar* key, uint size)
   {
     memset(key, 0, size);
     // Just don't support tiny keys, no point anyway.
-    if (size < sizeof(version))
+    if (size < 4)
       return 1;
 
-    version = htonl(version);
-    memcpy(key, &version, sizeof(version));
+    mi_int4store(key, version);
     return 0;
   }
 #endif
