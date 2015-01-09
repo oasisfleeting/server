@@ -5,7 +5,7 @@
 --innodb-immediate-scrub-data-uncompressed=OFF
 --innodb-background-scrub-data-uncompressed=ON
 --innodb-background-scrub-data-compressed=ON
---innodb-scrub-force-testing=ON
+--loose-innodb-scrub-force-testing=ON
 --encrypt-tmp-disk-tables=ON
 --aria-encrypt-tables=ON
 --innodb-encryption-threads=4
