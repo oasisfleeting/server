@@ -18,7 +18,7 @@ variable_name not in (
 'system_time_zone',
 'version_comment',
 'version_compile_machine', 'version_compile_os',
-'version_malloc_library', 'version'
+'version_malloc_library', 'version_ssl_library', 'version'
         )
 order by variable_name;
 VARIABLE_NAME	AUTOCOMMIT
@@ -4054,7 +4054,7 @@ where variable_name in (
 'system_time_zone',
 'version_comment',
 'version_compile_machine', 'version_compile_os',
-'version_malloc_library', 'version'
+'version_malloc_library', 'version_ssl_library', 'version'
         )
 order by variable_name;
 VARIABLE_NAME	HAVE_OPENSSL
@@ -4181,6 +4181,16 @@ VARIABLE_NAME	VERSION_MALLOC_LIBRARY
 VARIABLE_SCOPE	GLOBAL
 VARIABLE_TYPE	VARCHAR
 VARIABLE_COMMENT	Version of the used malloc library
+NUMERIC_MIN_VALUE	NULL
+NUMERIC_MAX_VALUE	NULL
+NUMERIC_BLOCK_SIZE	NULL
+ENUM_VALUE_LIST	NULL
+READ_ONLY	YES
+COMMAND_LINE_ARGUMENT	NULL
+VARIABLE_NAME	VERSION_SSL_LIBRARY
+VARIABLE_SCOPE	GLOBAL
+VARIABLE_TYPE	VARCHAR
+VARIABLE_COMMENT	Version of the used SSL library
 NUMERIC_MIN_VALUE	NULL
 NUMERIC_MAX_VALUE	NULL
 NUMERIC_BLOCK_SIZE	NULL
