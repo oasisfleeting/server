@@ -80,8 +80,6 @@ static int example_key_management_plugin_init(void *p)
   my_rnd_init(&seed, time(0), 0);
   get_latest_key_version();
 
-  my_aes_init_dynamic_encrypt(MY_AES_ALGORITHM_CTR);
-
   pthread_mutex_init(&mutex, NULL);
 
   return 0;
