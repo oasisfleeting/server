@@ -1,3 +1,4 @@
+--source include/have_debug.inc
 # This is just to satisfy all_vars
 
 show global variables like "debug_use_static_encryption_keys";
