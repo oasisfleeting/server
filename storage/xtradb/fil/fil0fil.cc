@@ -285,7 +285,7 @@ fil_read(
 				actual page size does not decrease. */
 {
 	return(fil_io(OS_FILE_READ, sync, space_id, zip_size, block_offset,
-		      byte_offset, len, buf, message, write_size, 0));
+		      byte_offset, len, buf, message, write_size, 0, false));
 }
 
 /********************************************************************//**
@@ -317,12 +317,13 @@ fil_write(
 				operation for this page and if
 				initialized we do not trim again if
 				actual page size does not decrease. */
-	lsn_t	lsn)		/* lsn of the newest modification */
+	lsn_t	lsn,		/*!< in: lsn of the newest modification */
+	bool	encrypt_later)  /*!< in: encrypt later ? */
 {
 	ut_ad(!srv_read_only_mode);
 
 	return(fil_io(OS_FILE_WRITE, sync, space_id, zip_size, block_offset,
-		      byte_offset, len, buf, message, write_size, lsn));
+			byte_offset, len, buf, message, write_size, lsn, encrypt_later));
 }
 
 /*******************************************************************//**
@@ -615,6 +616,8 @@ fil_node_open_file(
 		ut_a(size_bytes != (os_offset_t) -1);
 
 		node->file_block_size = os_file_get_block_size(node->handle, node->name);
+		space->file_block_size = node->file_block_size;
+
 #ifdef UNIV_HOTBACKUP
 		if (space->id == 0) {
 			node->size = (ulint) (size_bytes / UNIV_PAGE_SIZE);
@@ -780,6 +783,7 @@ add_size:
 
 	if (node->file_block_size == 0) {
 		node->file_block_size = os_file_get_block_size(node->handle, node->name);
+		space->file_block_size = node->file_block_size;
 	}
 
 	ut_a(ret);
@@ -1872,7 +1876,7 @@ fil_write_lsn_and_arch_no_to_file(
 				lsn);
 
 		err = fil_write(TRUE, space, 0, sum_of_sizes, 0,
-			        UNIV_PAGE_SIZE, buf, NULL, 0, 0);
+			        UNIV_PAGE_SIZE, buf, NULL, 0, 0, false);
 	}
 
 	mem_free(buf1);
@@ -5173,6 +5177,7 @@ retry:
 	/* Determine correct file block size */
 	if (node->file_block_size == 0) {
 		node->file_block_size = os_file_get_block_size(node->handle, node->name);
+		space->file_block_size = node->file_block_size;
 	}
 
 #ifdef HAVE_POSIX_FALLOCATE
@@ -5232,7 +5237,7 @@ retry:
 		success = os_aio(OS_FILE_WRITE, OS_AIO_SYNC,
 				 node->name, node->handle, buf,
 				 offset, page_size * n_pages,
-			         node, NULL, space_id, NULL, 0, 0, 0, 0, 0, 0);
+			         node, NULL, space_id, NULL, 0, 0, 0, 0, 0, 0, false);
 #endif /* UNIV_HOTBACKUP */
 		if (success) {
 			os_has_said_disk_full = FALSE;
@@ -5614,8 +5619,8 @@ _fil_io(
 				initialized we do not trim again if
 				actual page size does not decrease. */
 	trx_t*	trx,
-	lsn_t	lsn)		/* lsn of the newest modification */
-
+	lsn_t	lsn,		/*!< in: lsn of the newest modification */
+	bool	encrypt_later)	/*!< in: encrypt later ? */
 {
 	ulint		mode;
 	fil_space_t*	space;
@@ -5864,7 +5869,8 @@ _fil_io(
 		write_size,
 		page_encrypted,
 		page_encryption_key,
-	        lsn);
+	        lsn,
+		encrypt_later);
 
 #else
 	/* In mysqlbackup do normal i/o, not aio */
