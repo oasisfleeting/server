@@ -10,4 +10,4 @@
 --innodb-file-format=Barracuda
 --innodb-file-per-table=1
 --innodb-immediate-scrub-data-uncompressed=ON
---innodb-scrub-force-testing=ON
+--loose-innodb-scrub-force-testing=ON
